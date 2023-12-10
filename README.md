@@ -47,4 +47,19 @@ To reboot a BackupCM:
 - CM: Type `print` to view the MetaData.
 - Client: Type `print` to view the PageStore
 
-# How transfer of Primary title in CMs works
+# Fault Tolerance
+
+## Syncing MetaData
+When you have 2 CMs running: one Primary CM and one Backup CM, the Backup CM has runs goroutine (`go pulseCheck()`). With this, it polls the Primary CM every 1s to check if it is alive. In response, the Primary CM sends a Payload containing its MetaData. This way, every second the Backup CM has synced up with the Primary CM.
+
+## Transfer of Primary title
+When the Primary CM is killed, the pulseCheck will detect the death of the Primary CM. The Backup CM now takes over as Primary and sends a `CHANGE_CM` message to all Clients in `client.json` to notify them about the change in CM. All read and write requests are now routed to the Backup CM.
+
+## Rebooting Primary CM
+When you reboot the Primary CM, it sends a `IM_BACK` message to the Backup CM to let them know who's the real boss. It again sends a `CHANGE_CM` message to all the Clients to inform them about the change in CM. Read/Write requests are back to being routed to the Primary CM.
+
+## Rebooting Backup CM
+In the event of Backup CM death, you can reboot it. This will simply restart the goroutine to send `PulseChecks` to the PrimaryCM and resume syncing the MetaData every 1s.
+
+
+#Test results
