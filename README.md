@@ -32,12 +32,12 @@ To kill any node simply go to its terminal and press `ctrl+c`
 To reboot a PrimaryCM:
 1. Run `go build && ./ivy`
 2. You will be prompted to choose the node type: "Enter Node type ('1': CM, '2': Client, 'restartCM', 'restartBackup')"
-3. Type 'restartCM'. This checks `cm.json` for the IP of the original Primary CM and runs the CM on that IP.
+3. Type `restartCM`. This checks `cm.json` for the IP of the original Primary CM and runs the CM on that IP.
 
 To reboot a BackupCM:
 1. Run `go build && ./ivy`
 2. You will be prompted to choose the node type: "Enter Node type ('1': CM, '2': Client, 'restartCM', 'restartBackup')"
-3. Type 'restartBackupCM'. This checks `cm.json` for the IP of the Backup CM and runs the CM on that IP.
+3. Type `restartBackupCM`. This checks `cm.json` for the IP of the Backup CM and runs the CM on that IP.
 
 ## How to send read/write requests
 - Send a write request by typing `writePage <pageNo> <content>`. For example, you type `writePage P1 Content1`.
@@ -62,4 +62,54 @@ When you reboot the Primary CM, it sends a `IM_BACK` message to the Backup CM to
 In the event of Backup CM death, you can reboot it. This will simply restart the goroutine to send `PulseChecks` to the PrimaryCM and resume syncing the MetaData every 1s.
 
 
-#Test results
+# Experiments
+
+For each test, 12 terminals were used for:
+- 2 CMs (1 Primary + 1 Backup)
+- 10 Clients (Client 1 - 10)
+- One of the client initially seeds CM with **Pages P1-P10**
+- For each scenario, all 10 Clients ran `randomizeRWRequests()` which sends a total of 10 requests randomized by a coin flip to either read or write. You can run the simulation on each Client by typing `x`.
+- The time taken for all 10 requests to complete in each client was recorded (using `time.Now().UnixMilli()`).
+- For each scenario the Average Time for all 10 clients to complete 10 requests is shown. 
+
+![Untitled(3)](https://github.com/s4nat/ivy/assets/65476084/1732160e-8116-4d80-bd05-1bf313a2e40a)
+![Untitled(4)](https://github.com/s4nat/ivy/assets/65476084/9ae0fae0-09a7-4e56-9d28-b585549eb73d)
+
+## Test results
+### Scenario 1: No faults
+- Type `x` on all Client terminals. No further interference. 
+**Average Time/ms**: 10065
+
+### Scenario 2(a): Single Fault in Primary CM
+- Type `x` on all Client terminals.
+- Kill the primary CM by `ctrl-c`.  
+**Average Time/ms**: 10078
+
+### Scenario 2(b): Fail and reboot Primary CM
+- Type `x` on all Client terminals.
+- Kill the primary CM by `ctrl-c`.
+- Reboot the primary CM with `go build && ./ivy` and `restartCM`
+**Average Time/ms**: 10082**
+  
+### Scenario 3: Fail and reboot Primary CM multiple times
+- Type `x` on all Client terminals.
+- Kill the primary CM by `ctrl-c`.
+- Reboot the primary CM with `go build && ./ivy` and `restartCM`
+- Repeat the killing and rebooting multiple times
+**Average Time/ms**: 10080
+  
+### Scenario 4: Fail and reboot both Primary CM and Backup CM multiple times
+- Type `x` on all Client terminals.
+- Kill and Reboot Primary CM
+  - Kill the primary CM by `ctrl-c`.
+  - Reboot the primary CM with `go build && ./ivy` and `restartCM`
+- Kill and Reboot Backup CM
+  - Kill the Backup CM by `ctrl-c`.
+  - Reboot the Backup CM with `go build && ./ivy` and `restartBackupCM`
+**Average Time/ms**: 10082
+
+
+## Inferences
+Due to the nature of the implementation particularly with the non blocking syncing process, the time taken for each simulation is approximately constant.
+
+# Is Fault Tolerant Version of IVY sequentially consistent?
