@@ -155,3 +155,27 @@ For example, when a CM receive a `WRITE_REQUEST`. It sends an `INVALIDATE_COPY` 
       ownerIP := updatedPageInfo.Owner.IP
       reply := cm.CallRPC(writeForward, CLIENT, ownerID, ownerIP)
 
+### Sequential consistency with Primary CM failure
+Here we have 4 cases:
+1. Primary CM fails after last request is completed + Data sync with Backup CM is complete.
+2. Primary CM fails before last request is completed + Data sync with Backup CM is complete.
+3. Primary CM fails after last request is completed + Data sync with Backup CM is incomplete.
+4. Primary CM fails before last request is completed + Data sync with Backup CM is incomplete.
+
+### Case 1
+This is dealt with seamlessly as all requests are registered in MetaData and BackupCM can take over with most updated MetaData.
+
+### Case 2
+In this case, the last request to the Primary CM is now lost because the the Backup CM only has MetaData complete up till the request before the last request to the Primary CM.
+This is not dealt with in my implementation but can easily be done. If a client does not receive a `PAGE_SEND` after sending a request, it can resend the request after a timeout.
+
+### Case 3
+This is not dealt with at all. The client receives `PAGE_SEND` and assumes the request is complete. But the MetaData of the Backup CM does not reflect the latest request, hence the request is lost forever.
+
+### Case 4
+This is similar to Case 2, where an incomplete request can trigger a re-request by the Client after a timeout.
+
+The likelihood of lost requests can be significantly reduced with more frequent syncing of the data with the Backup CM.
+
+### Conclusion
+Overall, sequential consistency is still maintained as there is no case where a request which was ordered by the CM is re-ordered in the Backup CM. That means that _some_ total order of the request is always maintained.
