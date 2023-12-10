@@ -175,7 +175,5 @@ This is not dealt with at all. The client receives `PAGE_SEND` and assumes the r
 ### Case 4
 This is similar to Case 2, where an incomplete request can trigger a re-request by the Client after a timeout.
 
-The likelihood of lost requests can be significantly reduced with more frequent syncing of the data with the Backup CM.
-
 ### Conclusion
-Overall, sequential consistency is still maintained as there is no case where a request which was ordered by the CM is re-ordered in the Backup CM. That means that _some_ total order of the request is always maintained.
+Overall, sequential consistency is still maintained as there is no case where a request which was ordered by the CM is re-ordered in the Backup CM. That means that _some_ total order of the request is always maintained. Furthermore, the likelihood of lost requests can be significantly reduced with more frequent syncing of the data with the Backup CM.
