@@ -39,7 +39,7 @@ func main() {
 
 	// Specify type of Node: {Client, Central Manager}
 	reader := bufio.NewReader(os.Stdin)
-	logsystem.Println("Enter Node type ('1': CM, '2': Client)")
+	logsystem.Println("Enter Node type ('1': CM, '2': Client, 'restartCM', 'restartBackup')")
 	nodeType, err := reader.ReadString('\n')
 	if err != nil {
 		logerror.Println("Error reading input: ", err)
