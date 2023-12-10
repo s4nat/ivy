@@ -1,6 +1,8 @@
 # Fault Tolerant IVY Protocol (Integrated shared Virtual memory at Yale) 
 
 Go-based implementation of fault-tolerant Ivy Architecture with a backup central manager for consistent (meta)data handling during primary CM failures.
+![kisspng-clip-art-vine-portable-network-graphics-vector-gra-5cc30d5bf0e2c9 8282884015562868119867](https://github.com/s4nat/ivy/assets/65476084/9c419ee1-fb11-4764-9ece-812c761452a6)
+
 
 # How to run the code
 There are 2 types of nodes, Central Manager and Client. Each node runs on separate terminals on separate processes and communicate with each other using RPC calls. For a fresh run of the protocol, ensure the `/data` folder is empty.
