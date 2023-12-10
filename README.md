@@ -78,25 +78,25 @@ For each test, 12 terminals were used for:
 ## Test results
 ### Scenario 1: No faults
 - Type `x` on all Client terminals. No further interference. 
-**Average Time/ms**: 10065
+> **Average Time/ms**: 10065
 
 ### Scenario 2(a): Single Fault in Primary CM
 - Type `x` on all Client terminals.
 - Kill the primary CM by `ctrl-c`.  
-**Average Time/ms**: 10078
+> **Average Time/ms**: 10078
 
 ### Scenario 2(b): Fail and reboot Primary CM
 - Type `x` on all Client terminals.
 - Kill the primary CM by `ctrl-c`.
 - Reboot the primary CM with `go build && ./ivy` and `restartCM`
-**Average Time/ms**: 10082**
+> **Average Time/ms**: 10082**
   
 ### Scenario 3: Fail and reboot Primary CM multiple times
 - Type `x` on all Client terminals.
 - Kill the primary CM by `ctrl-c`.
 - Reboot the primary CM with `go build && ./ivy` and `restartCM`
 - Repeat the killing and rebooting multiple times
-**Average Time/ms**: 10080
+> **Average Time/ms**: 10080
   
 ### Scenario 4: Fail and reboot both Primary CM and Backup CM multiple times
 - Type `x` on all Client terminals.
@@ -106,10 +106,52 @@ For each test, 12 terminals were used for:
 - Kill and Reboot Backup CM
   - Kill the Backup CM by `ctrl-c`.
   - Reboot the Backup CM with `go build && ./ivy` and `restartBackupCM`
-**Average Time/ms**: 10082
+> **Average Time/ms**: 10082
 
 
 ## Inferences
 Due to the nature of the implementation particularly with the non blocking syncing process, the time taken for each simulation is approximately constant.
 
 # Is Fault Tolerant Version of IVY sequentially consistent?
+
+A sequentially consistent implementation should maintain **some total ordering of read and write requests amongst all clients**. Since all requests are routed to a single Central Manager, the incoming requests to the CM are automatically ordered. In situations where proceeding to the next flow in the logic needs to be blocked while waiting for a response from all Clients, the code has checks in place to deal with it.
+
+For example, when a CM receive a `WRITE_REQUEST`. It sends an `INVALIDATE_COPY` to all the Clients in the CopySet for the particular page. In my implementation, a `WRITE_FORWARD` is only sent when all `INVALIDATE_CONFIRMATION` are received. The code below demonstrates how the the function `return`s when a Client does not acknowledge a `INVALIDATE_COPY` message. 
+
+    for _, clientPointer := range pageInfo.CopySet {
+        invalidateCopy := Message{
+          Type: INVALIDATE_COPY,
+          Payload: Payload{
+            InvalidateCopy: InvalidateCopy{
+              WriteRequesterID: writeRequesterID,
+              PageNumber:       targetPageNo,
+            },
+          },
+        }
+    
+        reply := cm.CallRPC(invalidateCopy, CLIENT, clientPointer.ID, clientPointer.IP)
+        if !reply.Ack {
+          logerror.Printf("Msg [%s] from CM not acknowledged by Client %d\n", invalidateCopy.Type, clientPointer.ID)
+          logerror.Println("Cannot forward Write Request")
+          return
+        }
+      }
+    
+      // All InvalidateCopy responses have been received.
+      // Send WriteForward to Page Owner
+      writeForward := Message{
+        Type: WRITE_FORWARD,
+        Payload: Payload{
+          WriteForward: WriteForward{
+            WriteRequesterID: writeRequesterID,
+            WriteRequesterIP: writeRequesterIP,
+            PageNumber:       targetPageNo,
+            Content:          content,
+          },
+        },
+      }
+      updatedPageInfo := cm.MetaData[targetPageNo]
+      ownerID := updatedPageInfo.Owner.ID
+      ownerIP := updatedPageInfo.Owner.IP
+      reply := cm.CallRPC(writeForward, CLIENT, ownerID, ownerIP)
+
