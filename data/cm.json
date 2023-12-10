@@ -1,0 +1,12 @@
+[
+  {
+    "IP": "172.18.179.208:44233",
+    "MetaData": {},
+    "IsPrimary": true
+  },
+  {
+    "IP": "172.18.179.208:32963",
+    "MetaData": null,
+    "IsPrimary": false
+  }
+]
