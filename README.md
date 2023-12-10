@@ -19,7 +19,7 @@ To start the Backup CM:
 4. The Backup CM should now be running.
 
 To start a Client:
-1. 1. run `go build && ./ivy`
+1. run `go build && ./ivy`
 2. You will be prompted to choose the node type: "Enter Node type ('1': CM, '2': Client, 'restartCM', 'restartBackup')"
 3. Choose '1'. This will check `client.json ` and add Client (currentHighestID + 1) to the file.
 4. The Client should now be running
